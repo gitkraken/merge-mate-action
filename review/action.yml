@@ -1,0 +1,24 @@
+name: "Merge Mate: Review"
+description: Handle apply/undo changes via PR comment checkbox
+author: GitKraken
+
+branding:
+  icon: git-merge
+  color: blue
+
+inputs:
+  github-token:
+    description: GitHub token for authentication
+    required: true
+  log-level:
+    description: "Logging verbosity: error, warn, info, debug"
+    required: false
+    default: "info"
+
+outputs:
+  shouldProcess:
+    description: Whether processing was needed
+
+runs:
+  using: node24
+  main: ../dist/github-action/review/index.js

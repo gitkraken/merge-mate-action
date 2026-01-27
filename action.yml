@@ -1,0 +1,21 @@
+name: Merge Mate
+description: "Use /sync or /review instead"
+author: GitKraken
+
+branding:
+  icon: git-merge
+  color: blue
+
+runs:
+  using: composite
+  steps:
+    - name: Show error
+      run: |
+        echo "::error::Direct usage of merge-mate is not supported."
+        echo "::error::Use one of the subdirectory actions:"
+        echo "::error::  - gitkraken/merge-mate-action/sync@v1"
+        echo "::error::  - gitkraken/merge-mate-action/review@v1"
+        echo ""
+        echo "See: https://github.com/gitkraken/merge-mate-action#usage"
+        exit 1
+      shell: bash

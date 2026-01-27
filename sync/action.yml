@@ -1,0 +1,109 @@
+name: "Merge Mate: Sync"
+description: Sync PRs with target branches using rebase or merge strategy
+author: GitKraken
+
+branding:
+  icon: git-merge
+  color: blue
+
+inputs:
+  github-token:
+    description: GitHub token for authentication (typically secrets.GITHUB_TOKEN)
+    required: true
+  mode:
+    description: >-
+      Operation mode for branch synchronization: - rebase: Rebase source branch onto target (linear history, default) -
+      merge: Merge target branch into source (creates merge commit)
+    required: false
+    default: "rebase"
+  pr-filter:
+    description: >-
+      YAML filter for selecting PRs. Supports: ids (PR numbers), target-branches (glob patterns), created/updated (date
+      expressions). Use "!" prefix for exclusion. Examples: ids: [1, 2, "!99"], target-branches: ["main", "release/*"],
+      created: "<7d" (within last 7 days), created: ">30d" (older than 30 days), updated: ">2024-01-01"
+    required: false
+  max-concurrent:
+    description: Maximum number of concurrent PR processing
+    required: false
+    default: "3"
+  clone-depth:
+    description: Git clone depth for history (0 = full clone)
+    required: false
+    default: "100"
+  log-level:
+    description: "Logging verbosity: error, warn, info, debug"
+    required: false
+    default: "info"
+  push-strategy:
+    description: >-
+      Push strategy for rebased branches:
+         - dry-run: Analyze only, no pushes
+         - original-branch: Backup original to
+      hidden ref, push rebased to original branch
+         - hidden-branch: Push rebased to hidden ref, original unchanged (default)
+         - visible-branch: Push rebased to new visible branch
+    required: false
+    default: "hidden-branch"
+  pr-comment-strategy:
+    description: >-
+      Controls when to post comments on pull requests:
+        - none: Disable PR comments entirely
+        - failed: Only when rebase fails or aborts
+        - resolved: Only when AI resolves conflicts
+        - conflicts: When conflicts occur (resolved, failed, or aborted) [default]
+        - success: When rebase succeeds (clean + resolved) - all: For all outcomes
+    required: false
+    default: "conflicts"
+  ai-provider:
+    description: >-
+      AI provider for conflict resolution:
+        - none: AI disabled
+        - gitkraken: Use GitKraken API to provision OpenRouter token
+        - openrouter: Direct OpenRouter API access
+        - ollama: Local Ollama instance
+    required: false
+    default: "none"
+  ai-model:
+    description: AI model to use (e.g., anthropic/claude-sonnet-4.5 or llama3.2:3b)
+    required: false
+    default: "anthropic/claude-sonnet-4.5"
+  ai-api-base:
+    description: >-
+      API base URL (meaning depends on provider): - gitkraken: GitKraken API URL - openrouter: OpenRouter API URL -
+      ollama: Ollama API URL
+    required: false
+  ai-api-key:
+    description: >-
+      API key/token (meaning depends on provider): - gitkraken: GitKraken provisioner token - openrouter: OpenRouter API
+      key - ollama: not used
+    required: false
+  ai-request-limit:
+    description: Maximum concurrent AI resolution requests
+    required: false
+    default: "2"
+
+outputs:
+  processed-prs:
+    description: Number of PRs processed
+  conflicted-prs:
+    description: Number of PRs with conflicts
+  no-conflicts-prs:
+    description: Number of PRs without conflicts
+  failed-prs:
+    description: Number of PRs failed to process
+  metadata-path:
+    description: Path to metadata directory
+  resolved-files:
+    description: Number of files with AI resolutions
+  auto-apply-files:
+    description: Number of files safe to auto-apply
+  resolution-path:
+    description: Path to AI resolution metadata
+  total-tokens:
+    description: Total tokens used by AI resolution (OpenRouter/Ollama)
+  estimated-cost:
+    description: Estimated cost in USD for AI resolution (OpenRouter only)
+
+runs:
+  using: node24
+  main: ../dist/github-action/sync/index.js
