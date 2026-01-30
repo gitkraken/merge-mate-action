@@ -8,12 +8,34 @@ branding:
 
 inputs:
   github-token:
-    description: GitHub token for authentication
-    required: true
+    description: >-
+      GitHub token for authentication. If not provided, attempts to obtain GitHub App token via OIDC (requires id-token:
+      write permission and GitKraken GitHub App installed on the repository).
+    required: false
+  gk-api-base:
+    description: >-
+      GitKraken API base URL for OIDC token exchange. Only needed when using OIDC authentication (no github-token
+      provided). Defaults to built-in URL.
+    required: false
   log-level:
     description: "Logging verbosity: error, warn, info, debug"
     required: false
     default: "info"
+  telemetry-enabled:
+    description: Enable or disable telemetry. Enabled by default.
+    required: false
+    default: "true"
+  telemetry-endpoint:
+    description: >-
+      OpenTelemetry endpoint for telemetry data. If not specified, uses built-in default.
+    required: false
+  sentry-dsn:
+    description: Sentry DSN for error tracking (uses built-in default if not specified)
+    required: false
+  sentry-enabled:
+    description: Enable/disable Sentry error tracking
+    required: false
+    default: "true"
 
 outputs:
   shouldProcess:

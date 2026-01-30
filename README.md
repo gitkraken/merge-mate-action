@@ -16,6 +16,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -23,7 +24,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: gitkraken/merge-mate-action/sync@v0.1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           ai-provider: gitkraken
           ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
 ```
@@ -38,6 +38,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 concurrency:
   group: merge-mate-review-${{ github.event.issue.number }}
   cancel-in-progress: false
@@ -47,8 +48,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: gitkraken/merge-mate-action/review@v0.1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 When target branch is updated, sync runs automatically. PR comments appear with diff preview and checkboxes.
