@@ -36,6 +36,12 @@ inputs:
     description: Enable/disable Sentry error tracking
     required: false
     default: "true"
+  pr-number:
+    description: "PR number to process (required for workflow_dispatch)"
+    required: false
+  action:
+    description: "Action to perform: 'apply' or 'undo' (required for workflow_dispatch)"
+    required: false
 
 outputs:
   shouldProcess:
