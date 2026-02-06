@@ -2,9 +2,14 @@
 
 A GitHub Action that syncs pull requests with their target branches and optionally uses AI to resolve conflicts.
 
+## Prerequisites
+
+1. **Install the GitHub App** — [Install Merge Mate](https://github.com/apps/gitkraken-services) on your repository
+2. **Add workflow files** — Create the YAML files below manually (the app does not generate them automatically)
+
 ## Quick Start
 
-Create two workflow files:
+Manually create two workflow files in your repository:
 
 **`.github/workflows/merge-mate.yml`** — syncs all PRs when the target branch is updated:
 
