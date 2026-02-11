@@ -49,4 +49,4 @@ outputs:
 
 runs:
   using: node24
-  main: ../dist/github-action/review/index.js
+  main: ../dist/review/index.js

@@ -128,4 +128,4 @@ outputs:
 
 runs:
   using: node24
-  main: ../dist/github-action/sync/index.js
+  main: ../dist/sync/index.js

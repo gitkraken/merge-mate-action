@@ -70,7 +70,9 @@ jobs:
           action: ${{ inputs.action }}
 ```
 
-When the target branch is updated, sync runs automatically. PR comments appear with diff preview and checkboxes. You can also manually trigger apply/undo from the Actions tab using workflow_dispatch or via the Conflict viewer link in the PR message.
+When the target branch is updated, sync runs automatically. PR comments appear with diff preview and checkboxes. You can
+also manually trigger apply/undo from the Actions tab using workflow_dispatch or via the Conflict viewer link in the PR
+message.
 
 ## Features
 
