@@ -103,6 +103,10 @@ inputs:
     description: Enable/disable Sentry error tracking
     required: false
     default: "true"
+  diff-viewer-mode:
+    description: 'Diff viewer display mode ("unified" or "detailed")'
+    required: false
+    default: 'unified'
 
 outputs:
   processed-prs:
