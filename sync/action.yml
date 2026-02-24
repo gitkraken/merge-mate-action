@@ -103,6 +103,13 @@ inputs:
     description: Enable/disable Sentry error tracking
     required: false
     default: "true"
+  exclude-from-ai:
+    description: >-
+      Newline-separated glob patterns for files to exclude from AI resolution. Matched files will use target branch
+      version instead. Lock files are always excluded. When empty, built-in defaults are used (minified, bundled,
+      generated files, dist/build directories). Providing any value replaces the defaults entirely.
+    required: false
+    default: ""
   diff-viewer-mode:
     description: 'Diff viewer display mode ("unified" or "detailed")'
     required: false

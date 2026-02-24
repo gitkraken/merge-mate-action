@@ -93,6 +93,33 @@ message.
 
 - Pin to `@v1` — all compatible updates
 
+## Excluding Files from AI Resolution
+
+Lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, etc.) are **always** excluded from AI resolution — conflicted lock files are resolved by taking the target branch version.
+
+All other files can be excluded via the `exclude-from-ai` input using newline-separated glob patterns. When this input is empty, the following defaults apply:
+
+| Pattern | Description |
+|---------|-------------|
+| `**/*.min.js`, `**/*.min.css` | Minified files |
+| `**/*.bundle.js`, `**/*.bundle.css` | Bundled files |
+| `**/*.generated.*`, `**/*.auto.*` | Generated code markers |
+| `**/*.g.dart`, `**/*.g.ts` | Dart/TS code generation |
+| `**/*.pb.go`, `**/*.pb.ts` | Protobuf generated code |
+| `**/generated/**` | Generated directories |
+| `**/dist/**`, `**/build/**` | Build output directories |
+
+Providing **any** value replaces the defaults entirely:
+
+```yaml
+- uses: gitkraken/merge-mate-action/sync@v0.1
+  with:
+    exclude-from-ai: |
+      **/dist/**
+      **/vendor/**
+      **/*.auto.*
+```
+
 ## Documentation
 
 See action.yml files for all available inputs and outputs.
