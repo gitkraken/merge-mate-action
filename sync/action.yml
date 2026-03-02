@@ -8,134 +8,62 @@ branding:
 
 inputs:
   github-token:
-    description: >-
-      GitHub token for authentication. If not provided, attempts to obtain GitHub App token via OIDC (requires id-token:
-      write permission and GitKraken GitHub App installed on the repository).
-    required: false
-  gk-api-base:
-    description: >-
-      GitKraken API base URL for OIDC token exchange. Only needed when using OIDC authentication (no github-token
-      provided). Defaults to built-in URL.
+    description: GitHub token for authentication
     required: false
   mode:
-    description: >-
-      Operation mode for branch synchronization: - rebase: Rebase source branch onto target (linear history, default) -
-      merge: Merge target branch into source (creates merge commit)
+    description: "rebase or merge"
     required: false
     default: "rebase"
   pr-filter:
-    description: >-
-      YAML filter for selecting PRs. Supports: ids (PR numbers), target-branches (glob patterns), created/updated (date
-      expressions). Use "!" prefix for exclusion. Examples: ids: [1, 2, "!99"], target-branches: ["main", "release/*"],
-      created: "<7d" (within last 7 days), created: ">30d" (older than 30 days), updated: ">2024-01-01"
+    description: "YAML filter for selecting PRs: ids, target-branches, created, updated, authors"
     required: false
-  max-concurrent:
-    description: Maximum number of concurrent PR processing
+  concurrency:
+    description: Maximum number of PRs to process in parallel
     required: false
     default: "3"
-  clone-depth:
-    description: Git clone depth for history (0 = full clone)
+  apply-policy:
+    description: "auto: apply above threshold to PR branch. resolved-only: same as auto but skip clean rebases. hidden-only: always push to hidden ref. dry-run: no push"
+    required: false
+    default: "auto"
+  confidence-threshold:
+    description: "Minimum AI confidence (0-100) to auto-apply resolved branches. 100 = only apply when fully confident"
     required: false
     default: "100"
-  log-level:
-    description: "Logging verbosity: error, warn, info, debug"
-    required: false
-    default: "info"
-  push-strategy:
-    description: >-
-      Push strategy for rebased branches:
-         - dry-run: Analyze only, no pushes
-         - original-branch: Backup original to
-      hidden ref, push rebased to original branch
-         - hidden-branch: Push rebased to hidden ref, original unchanged (default)
-         - visible-branch: Push rebased to new visible branch
-    required: false
-    default: "hidden-branch"
-  pr-comment-strategy:
-    description: >-
-      Controls when to post comments on pull requests:
-        - none: Disable PR comments entirely
-        - failed: Only when rebase fails or aborts
-        - resolved: Only when AI resolves conflicts
-        - conflicts: When conflicts occur (resolved, failed, or aborted) [default]
-        - success: When rebase succeeds (clean + resolved) - all: For all outcomes
+  comment-policy:
+    description: "When to post PR comments: none | failed | resolved | conflicts | success | all"
     required: false
     default: "conflicts"
   ai-provider:
-    description: >-
-      AI provider for conflict resolution:
-        - none: AI disabled
-        - gitkraken: Use GitKraken API to provision OpenRouter token
-        - openrouter: Direct OpenRouter API access
-        - ollama: Local Ollama instance
+    description: "AI provider for conflict resolution: none | gitkraken"
     required: false
     default: "none"
   ai-model:
-    description: AI model to use (e.g., anthropic/claude-sonnet-4.5 or llama3.2:3b)
-    required: false
-    default: "anthropic/claude-sonnet-4.5"
-  ai-api-base:
-    description: >-
-      API base URL (meaning depends on provider): - gitkraken: GitKraken API URL - openrouter: OpenRouter API URL -
-      ollama: Ollama API URL
+    description: AI model identifier (provider-specific)
     required: false
   ai-api-key:
-    description: >-
-      API key/token (meaning depends on provider): - gitkraken: GitKraken provisioner token - openrouter: OpenRouter API
-      key - ollama: not used
+    description: API key or token for the AI provider
     required: false
-  ai-request-limit:
-    description: Maximum concurrent AI resolution requests
+  ai-api-base:
+    description: Custom API base URL for the AI provider
     required: false
-    default: "2"
-  telemetry-enabled:
-    description: Enable or disable telemetry. Enabled by default.
+  exclude-files:
+    description: "Newline-separated glob patterns for files to exclude from AI resolution"
     required: false
-    default: "true"
-  telemetry-endpoint:
-    description: >-
-      OpenTelemetry endpoint for telemetry data. If not specified, uses built-in default.
+  diff-viewer-base-url:
+    description: Base URL for the diff viewer
     required: false
-  sentry-dsn:
-    description: Sentry DSN for error tracking (uses built-in default if not specified)
+    default: "https://gitkraken.dev"
+  gk-api-base:
+    description: GitKraken API base URL for OIDC token exchange
     required: false
-  sentry-enabled:
-    description: Enable/disable Sentry error tracking
+  telemetry:
+    description: Enable telemetry and error tracking
     required: false
     default: "true"
-  exclude-from-ai:
-    description: >-
-      Newline-separated glob patterns for files to exclude from AI resolution. Matched files will use target branch
-      version instead. Lock files are always excluded. When empty, built-in defaults are used (minified, bundled,
-      generated files, dist/build directories). Providing any value replaces the defaults entirely.
+  log-level:
+    description: "error | warn | info | debug"
     required: false
-    default: ""
-  diff-viewer-mode:
-    description: 'Diff viewer display mode ("unified" or "detailed")'
-    required: false
-    default: 'unified'
-
-outputs:
-  processed-prs:
-    description: Number of PRs processed
-  conflicted-prs:
-    description: Number of PRs with conflicts
-  no-conflicts-prs:
-    description: Number of PRs without conflicts
-  failed-prs:
-    description: Number of PRs failed to process
-  metadata-path:
-    description: Path to metadata directory
-  resolved-files:
-    description: Number of files with AI resolutions
-  auto-apply-files:
-    description: Number of files safe to auto-apply
-  resolution-path:
-    description: Path to AI resolution metadata
-  total-tokens:
-    description: Total tokens used by AI resolution (OpenRouter/Ollama)
-  estimated-cost:
-    description: Estimated cost in USD for AI resolution (OpenRouter only)
+    default: "info"
 
 runs:
   using: node24

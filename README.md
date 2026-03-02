@@ -9,7 +9,7 @@ A GitHub Action that syncs pull requests with their target branches and optional
 
 ## Quick Start
 
-Manually create two workflow files in your repository:
+Create two workflow files in your repository:
 
 **`.github/workflows/merge-mate.yml`** — syncs all PRs when the target branch is updated:
 
@@ -26,7 +26,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: gitkraken/merge-mate-action/sync@v0.1
+      - uses: gitkraken/merge-mate-action/sync@v0.2
         with:
           ai-provider: gitkraken
           ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
@@ -61,65 +61,98 @@ concurrency:
   cancel-in-progress: false
 jobs:
   review:
-    if: github.event_name == 'workflow_dispatch' || github.event.issue.pull_request
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request && github.event.sender.type != 'Bot')
     runs-on: ubuntu-latest
     steps:
-      - uses: gitkraken/merge-mate-action/review@v0.1
+      - uses: gitkraken/merge-mate-action/review@v0.2
         with:
           pr-number: ${{ inputs.pr-number }}
           action: ${{ inputs.action }}
 ```
 
-When the target branch is updated, sync runs automatically. PR comments appear with diff preview and checkboxes. You can
-also manually trigger apply/undo from the Actions tab using workflow_dispatch or via the Conflict viewer link in the PR
-message.
+When the target branch is updated, sync runs automatically. PR comments appear with diff preview and checkboxes. You can also manually trigger apply/undo from the Actions tab using workflow_dispatch or via the Conflict viewer link in the PR message.
 
 ## Features
 
 - **Flexible Sync** — Rebase (linear history) or Merge (merge commits)
 - **AI Conflict Resolution** — Automatic conflict resolution with AI
-- **Safe by Default** — Changes stored in hidden refs until approved
+- **Safe by Default** — AI resolutions stored in hidden refs until approved; clean rebases are applied directly
 - **Parallel Processing** — Configurable concurrency
 - **Detailed Reports** — PR comments with diffs, GitHub Summary
 
-## Versioning
+## Sync Inputs
 
-**For v0.x.y (pre-release):**
+| Input | Default | Description |
+|-------|---------|-------------|
+| `github-token` | `${{ github.token }}` | GitHub token for authentication |
+| `mode` | `rebase` | `rebase` or `merge` |
+| `pr-filter` | — | YAML filter for selecting PRs: `ids`, `target-branches`, `created`, `updated`, `authors` |
+| `concurrency` | `3` | Maximum number of PRs to process in parallel |
+| `apply-policy` | `auto` | `auto` — apply above threshold. `resolved-only` — same but skip clean rebases. `hidden-only` — always push to hidden ref. `dry-run` — no push |
+| `confidence-threshold` | `100` | Minimum AI confidence (0–100) to auto-apply. `100` = only when fully confident |
+| `comment-policy` | `conflicts` | When to post PR comments: `none` \| `failed` \| `resolved` \| `conflicts` \| `success` \| `all` |
+| `ai-provider` | `none` | AI provider: `none` \| `gitkraken` |
+| `ai-model` | — | AI model identifier (provider-specific) |
+| `ai-api-key` | — | API key or token for the AI provider |
+| `ai-api-base` | — | Custom API base URL |
+| `exclude-files` | see below | Newline-separated glob patterns for files to exclude from AI resolution |
+| `diff-viewer-base-url` | `https://gitkraken.dev` | Base URL for the diff viewer |
+| `gk-api-base` | — | GitKraken API base URL for OIDC token exchange |
+| `telemetry` | `true` | Enable telemetry and error tracking |
+| `log-level` | `info` | `error` \| `warn` \| `info` \| `debug` |
 
-- Pin to `@v0.1`, `@v0.2` — patches within the same minor version
-- Breaking changes may occur between minors
+## Review Inputs
 
-**For v1+ (stable):**
-
-- Pin to `@v1` — all compatible updates
+| Input | Default | Description |
+|-------|---------|-------------|
+| `github-token` | `${{ github.token }}` | GitHub token for authentication |
+| `pr-number` | — | PR number to process (required for `workflow_dispatch`) |
+| `action` | — | `apply` or `undo` (required for `workflow_dispatch`) |
+| `gk-api-base` | — | GitKraken API base URL for OIDC token exchange |
+| `telemetry` | `true` | Enable telemetry and error tracking |
+| `log-level` | `info` | `error` \| `warn` \| `info` \| `debug` |
 
 ## Excluding Files from AI Resolution
 
-Lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, etc.) are **always** excluded from AI resolution — conflicted lock files are resolved by taking the target branch version.
+Lock files are **always** excluded from AI resolution — conflicted lock files are resolved by taking the target branch version.
 
-All other files can be excluded via the `exclude-from-ai` input using newline-separated glob patterns. When this input is empty, the following defaults apply:
+When `exclude-files` is not set, the following defaults apply:
 
 | Pattern | Description |
 |---------|-------------|
+| `**/package-lock.json`, `**/pnpm-lock.yaml`, `**/yarn.lock`, `**/cargo.lock` | JS/Rust lock files |
+| `**/gemfile.lock`, `**/poetry.lock`, `**/go.sum`, `**/composer.lock` | Ruby/Python/Go/PHP lock files |
+| `**/gradle.lock`, `**/maven.lock`, `**/*.lockfile` | JVM/generic lock files |
 | `**/*.min.js`, `**/*.min.css` | Minified files |
 | `**/*.bundle.js`, `**/*.bundle.css` | Bundled files |
 | `**/*.generated.*`, `**/*.auto.*` | Generated code markers |
 | `**/*.g.dart`, `**/*.g.ts` | Dart/TS code generation |
 | `**/*.pb.go`, `**/*.pb.ts` | Protobuf generated code |
-| `**/generated/**` | Generated directories |
-| `**/dist/**`, `**/build/**` | Build output directories |
+| `**/generated/**`, `**/dist/**`, `**/build/**` | Generated/build directories |
 
-Providing **any** value replaces the defaults entirely:
+Custom patterns are **appended** to the defaults:
 
 ```yaml
-- uses: gitkraken/merge-mate-action/sync@v0.1
+- uses: gitkraken/merge-mate-action/sync@v0.2
   with:
-    exclude-from-ai: |
-      **/dist/**
+    exclude-files: |
       **/vendor/**
-      **/*.auto.*
+      **/fixtures/**
 ```
 
-## Documentation
+## More Examples
 
-See action.yml files for all available inputs and outputs.
+See [EXAMPLES.md](./EXAMPLES.md) for ready-to-use workflow presets: apply policies, dry run, manual trigger, PR filtering, and more.
+
+## Versioning
+
+**For v0.x.y (pre-release):**
+
+- Pin to `@v0.2` — patches within the same minor version
+- Breaking changes may occur between minors
+
+**For v1+ (stable):**
+
+- Pin to `@v1` — all compatible updates
