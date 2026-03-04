@@ -215,6 +215,17 @@ jobs:
             created: 7d
 ```
 
+## Filter by team
+
+Only sync PRs authored by members of a GitHub team. Requires `read:org` scope (PAT) or `members: read` permission (GitHub App).
+
+```yaml
+          pr-filter: |
+            authors:
+              - @gitkraken/frontend
+              - !@gitkraken/bots
+```
+
 ## Push + manual (combined)
 
 Automatic sync on push to `main`, plus manual trigger for ad-hoc runs.

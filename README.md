@@ -1,4 +1,4 @@
-# Merge Mate
+# Merge Mate - Action
 
 A GitHub Action that syncs pull requests with their target branches and optionally uses AI to resolve conflicts.
 
@@ -88,7 +88,7 @@ When the target branch is updated, sync runs automatically. PR comments appear w
 |-------|---------|-------------|
 | `github-token` | `${{ github.token }}` | GitHub token for authentication |
 | `mode` | `rebase` | `rebase` or `merge` |
-| `pr-filter` | — | YAML filter for selecting PRs: `ids`, `target-branches`, `created`, `updated`, `authors` |
+| `pr-filter` | — | YAML filter for selecting PRs: `ids`, `target-branches`, `created`, `updated`, `authors` (supports `@org/team-slug` tokens) |
 | `concurrency` | `3` | Maximum number of PRs to process in parallel |
 | `apply-policy` | `auto` | `auto` — apply above threshold. `resolved-only` — same but skip clean rebases. `hidden-only` — always push to hidden ref. `dry-run` — no push |
 | `confidence-threshold` | `100` | Minimum AI confidence (0–100) to auto-apply. `100` = only when fully confident |
