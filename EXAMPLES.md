@@ -116,12 +116,12 @@ jobs:
         with:
           ai-provider: gitkraken
           ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
-          apply-policy: hidden-only
+          apply-policy: review
 ```
 
 ## Dry run
 
-Preview what would happen without pushing anything. Posts comments for all PRs regardless of outcome.
+Preview what would happen without pushing anything. Comments are posted only on errors.
 
 ```yaml
 name: Merge Mate Sync (Dry Run)
@@ -141,7 +141,6 @@ jobs:
           ai-provider: gitkraken
           ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
           apply-policy: dry-run
-          comment-policy: all
 ```
 
 ## Manual trigger
@@ -168,9 +167,9 @@ on:
         options:
           - auto
           - resolved-only
-          - hidden-only
+          - review
           - dry-run
-        default: hidden-only
+        default: review
 permissions:
   contents: write
   pull-requests: write
@@ -243,9 +242,9 @@ on:
         type: choice
         options:
           - auto
-          - hidden-only
+          - review
           - dry-run
-        default: hidden-only
+        default: review
 permissions:
   contents: write
   pull-requests: write

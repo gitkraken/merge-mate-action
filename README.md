@@ -90,9 +90,8 @@ When the target branch is updated, sync runs automatically. PR comments appear w
 | `mode` | `rebase` | `rebase` or `merge` |
 | `pr-filter` | — | YAML filter for selecting PRs: `ids`, `target-branches`, `created`, `updated`, `authors` (supports `@org/team-slug` tokens) |
 | `concurrency` | `3` | Maximum number of PRs to process in parallel |
-| `apply-policy` | `auto` | `auto` — apply above threshold. `resolved-only` — same but skip clean rebases. `hidden-only` — always push to hidden ref. `dry-run` — no push |
+| `apply-policy` | `auto` | `auto` — apply above threshold. `resolved-only` — same but skip clean rebases. `review` — push to hidden ref for review. `dry-run` — no push |
 | `confidence-threshold` | `100` | Minimum AI confidence (0–100) to auto-apply. `100` = only when fully confident |
-| `comment-policy` | `conflicts` | When to post PR comments: `none` \| `failed` \| `resolved` \| `conflicts` \| `success` \| `all` |
 | `ai-provider` | `none` | AI provider: `none` \| `gitkraken` |
 | `ai-model` | — | AI model identifier (provider-specific) |
 | `ai-api-key` | — | API key or token for the AI provider |

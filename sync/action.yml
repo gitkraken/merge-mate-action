@@ -22,17 +22,13 @@ inputs:
     required: false
     default: "3"
   apply-policy:
-    description: "auto: apply above threshold to PR branch. resolved-only: same as auto but skip clean rebases. hidden-only: always push to hidden ref. dry-run: no push"
+    description: "auto: apply above threshold to PR branch. resolved-only: same as auto but skip clean rebases. review: push to hidden ref for review. dry-run: no push"
     required: false
     default: "auto"
   confidence-threshold:
     description: "Minimum AI confidence (0-100) to auto-apply resolved branches. 100 = only apply when fully confident"
     required: false
     default: "100"
-  comment-policy:
-    description: "When to post PR comments: none | failed | resolved | conflicts | success | all"
-    required: false
-    default: "conflicts"
   ai-provider:
     description: "AI provider for conflict resolution: none | gitkraken"
     required: false
