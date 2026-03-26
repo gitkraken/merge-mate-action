@@ -4,26 +4,9 @@ Ready-to-use workflow configurations. Copy, adjust branch names and secrets, com
 
 All examples assume the [review workflow](./README.md#quick-start) is already set up.
 
-## Rebase without AI
+All sync examples include a `concurrency` block to prevent overlapping runs from pushing to the same refs simultaneously. The default group key `merge-mate-sync-${{ github.ref }}` serializes runs per trigger branch. You can customize the key for your use case — for example, include a PR filter input so that manual runs with disjoint PR sets can execute in parallel.
 
-Keeps PRs up-to-date with `main`. Conflicts are reported but not resolved.
-
-```yaml
-name: Merge Mate Sync
-on:
-  push:
-    branches: [main]
-permissions:
-  contents: write
-  pull-requests: write
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: gitkraken/merge-mate-action/sync@v0.2
-```
-
-## Rebase with GitKraken AI
+## Rebase with AI
 
 Resolves conflicts with AI. Clean rebases are pushed directly to the PR branch. AI-resolved conflicts are saved to hidden refs for review — the default confidence threshold is 100%, so only perfect resolutions are auto-applied.
 
@@ -32,6 +15,9 @@ name: Merge Mate Sync
 on:
   push:
     branches: [main]
+concurrency:
+  group: merge-mate-sync-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: write
   pull-requests: write
@@ -42,8 +28,7 @@ jobs:
     steps:
       - uses: gitkraken/merge-mate-action/sync@v0.2
         with:
-          ai-provider: gitkraken
-          ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
+          ai-api-key: ${{ secrets.MERGE_MATE_API_KEY }}
 ```
 
 ## Auto-apply AI resolutions
@@ -55,6 +40,9 @@ name: Merge Mate Sync
 on:
   push:
     branches: [main]
+concurrency:
+  group: merge-mate-sync-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: write
   pull-requests: write
@@ -65,8 +53,7 @@ jobs:
     steps:
       - uses: gitkraken/merge-mate-action/sync@v0.2
         with:
-          ai-provider: gitkraken
-          ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
+          ai-api-key: ${{ secrets.MERGE_MATE_API_KEY }}
           confidence-threshold: "80"
 ```
 
@@ -79,6 +66,9 @@ name: Merge Mate Sync
 on:
   push:
     branches: [main]
+concurrency:
+  group: merge-mate-sync-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: write
   pull-requests: write
@@ -89,8 +79,7 @@ jobs:
     steps:
       - uses: gitkraken/merge-mate-action/sync@v0.2
         with:
-          ai-provider: gitkraken
-          ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
+          ai-api-key: ${{ secrets.MERGE_MATE_API_KEY }}
           apply-policy: resolved-only
           confidence-threshold: "80"
 ```
@@ -104,6 +93,9 @@ name: Merge Mate Sync
 on:
   push:
     branches: [main]
+concurrency:
+  group: merge-mate-sync-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: write
   pull-requests: write
@@ -114,8 +106,7 @@ jobs:
     steps:
       - uses: gitkraken/merge-mate-action/sync@v0.2
         with:
-          ai-provider: gitkraken
-          ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
+          ai-api-key: ${{ secrets.MERGE_MATE_API_KEY }}
           apply-policy: review
 ```
 
@@ -128,6 +119,9 @@ name: Merge Mate Sync (Dry Run)
 on:
   push:
     branches: [main]
+concurrency:
+  group: merge-mate-sync-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: write
   pull-requests: write
@@ -138,8 +132,7 @@ jobs:
     steps:
       - uses: gitkraken/merge-mate-action/sync@v0.2
         with:
-          ai-provider: gitkraken
-          ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
+          ai-api-key: ${{ secrets.MERGE_MATE_API_KEY }}
           apply-policy: dry-run
 ```
 
@@ -182,8 +175,7 @@ jobs:
         with:
           mode: ${{ inputs.mode }}
           apply-policy: ${{ inputs.apply-policy }}
-          ai-provider: gitkraken
-          ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
+          ai-api-key: ${{ secrets.MERGE_MATE_API_KEY }}
 ```
 
 ## Filter specific PRs
@@ -195,6 +187,9 @@ name: Merge Mate Sync
 on:
   push:
     branches: [main, "release/*"]
+concurrency:
+  group: merge-mate-sync-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: write
   pull-requests: write
@@ -205,8 +200,7 @@ jobs:
     steps:
       - uses: gitkraken/merge-mate-action/sync@v0.2
         with:
-          ai-provider: gitkraken
-          ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
+          ai-api-key: ${{ secrets.MERGE_MATE_API_KEY }}
           pr-filter: |
             target-branches:
               - main
@@ -245,6 +239,9 @@ on:
           - review
           - dry-run
         default: review
+concurrency:
+  group: merge-mate-sync-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: write
   pull-requests: write
@@ -256,6 +253,5 @@ jobs:
       - uses: gitkraken/merge-mate-action/sync@v0.2
         with:
           apply-policy: ${{ inputs.apply-policy || 'auto' }}
-          ai-provider: gitkraken
-          ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
+          ai-api-key: ${{ secrets.MERGE_MATE_API_KEY }}
 ```

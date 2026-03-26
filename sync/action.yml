@@ -29,18 +29,14 @@ inputs:
     description: "Minimum AI confidence (0-100) to auto-apply resolved branches. 100 = only apply when fully confident"
     required: false
     default: "100"
-  ai-provider:
-    description: "AI provider for conflict resolution: none | gitkraken"
-    required: false
-    default: "none"
   ai-model:
-    description: AI model identifier (provider-specific)
+    description: AI model identifier
     required: false
   ai-api-key:
-    description: API key or token for the AI provider
-    required: false
+    description: API key for AI conflict resolution
+    required: true
   ai-api-base:
-    description: Custom API base URL for the AI provider
+    description: Custom API base URL
     required: false
   exclude-files:
     description: "Newline-separated glob patterns for files to exclude from AI resolution"
@@ -49,9 +45,6 @@ inputs:
     description: Base URL for the diff viewer
     required: false
     default: "https://gitkraken.dev"
-  gk-api-base:
-    description: GitKraken API base URL for OIDC token exchange
-    required: false
   telemetry:
     description: Enable telemetry and error tracking
     required: false

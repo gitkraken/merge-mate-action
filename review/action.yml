@@ -16,9 +16,6 @@ inputs:
   action:
     description: "'apply' or 'undo' (required for workflow_dispatch)"
     required: false
-  gk-api-base:
-    description: GitKraken API base URL for OIDC token exchange
-    required: false
   telemetry:
     description: Enable telemetry and error tracking
     required: false
