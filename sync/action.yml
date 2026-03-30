@@ -34,7 +34,7 @@ inputs:
     required: false
   ai-api-key:
     description: API key for AI conflict resolution
-    required: true
+    required: false
   ai-api-base:
     description: Custom API base URL
     required: false
