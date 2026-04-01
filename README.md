@@ -14,6 +14,11 @@ A GitHub Action that syncs pull requests with their target branches and uses AI 
 
 4. **Add workflow files** — Create the YAML files below manually (the app does not generate them automatically).
 
+If you need Merge Mate to push to branches that live in forks, especially private forks, plan the fork credential path up front:
+
+- Install the GitKraken App on the fork owner too, and grant it access to the fork repository.
+- Or provide `fork-push-token` in both the sync and review workflows.
+
 ## Quick Start
 
 Create two workflow files in your repository:
@@ -81,6 +86,13 @@ jobs:
           action: ${{ inputs.action }}
 ```
 
+When the target branch is updated, sync runs automatically. PR comments appear with diff preview and checkboxes. You can also manually trigger apply/undo from the Actions tab using workflow_dispatch or via the Conflict viewer link in the PR message.
+
+These Quick Start workflows omit `github-token` on purpose and rely on GitKraken App authentication via OIDC, so they require `permissions: id-token: write`. If you prefer to use `${{ github.token }}` or a PAT instead, pass it explicitly as `github-token`.
+
+If your repository receives PRs from private forks, read [Fork Pushes](./README.md#fork-pushes) before relying on the default setup. Installing the app only on the base repository is not always enough to push back to fork branches.
+
+
 ## Features
 
 - **Flexible Sync** — Rebase (linear history) or Merge (merge commits)
@@ -122,31 +134,146 @@ git fetch && git reset --hard origin/<branch>
 
 ## Sync Inputs
 
-| Input                  | Default                         | Description                                                                                                                                                        |
-| ---------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `github-token`         | `${{ github.token }}`           | GitHub token for authentication                                                                                                                                    |
-| `mode`                 | `rebase`                        | `rebase` or `merge`                                                                                                                                                |
-| `pr-filter`            | —                               | YAML filter for selecting PRs: `ids`, `target-branches`, `created`, `updated`, `authors` (supports `@org/team-slug` tokens)                                        |
-| `concurrency`          | `3`                             | Maximum number of PRs to process in parallel                                                                                                                       |
-| `apply-policy`         | `auto`                          | `auto` — apply above threshold. `resolved-only` — same but skip clean rebases. `review` — skip clean, save conflicts to hidden ref for review. `dry-run` — no push |
-| `confidence-threshold` | `100`                           | Minimum AI confidence (0–100) to auto-apply. `100` = only when fully confident                                                                                     |
-| `ai-model`             | `google/gemini-3-flash-preview` | AI model identifier                                                                                                                                                |
-| `ai-api-key`           | —                               | **Required.** API key for AI conflict resolution                                                                                                                   |
-| `ai-api-base`          | —                               | Custom API base URL                                                                                                                                                |
-| `exclude-files`        | see below                       | Newline-separated glob patterns for files to exclude from AI resolution                                                                                            |
-| `diff-viewer-base-url` | `https://gitkraken.dev`         | Base URL for the diff viewer                                                                                                                                       |
-| `telemetry`            | `true`                          | Enable telemetry and error tracking                                                                                                                                |
-| `log-level`            | `info`                          | `error` \| `warn` \| `info` \| `debug`                                                                                                                             |
+| Input | Default | Description |
+|-------|---------|-------------|
+| `github-token` | — | GitHub token for authentication. If omitted, Merge Mate falls back to GitKraken App authentication via OIDC. |
+| `fork-push-token` | — | Explicit token used only to probe/push fork branches when the primary token cannot access the fork |
+| `mode` | `rebase` | `rebase` or `merge` |
+| `signing-mode` | `off` | `off` or `ssh`. Enables SSH signing capability, but Merge Mate only signs when policy requires it |
+| `pr-filter` | — | YAML filter for selecting PRs: `ids`, `target-branches`, `created`, `updated`, `authors` (supports `@org/team-slug` tokens) |
+| `concurrency` | `3` | Maximum number of PRs to process in parallel |
+| `apply-policy` | `auto` | `auto` — apply above threshold. `resolved-only` — same but skip clean rebases. `review` — save non-clean results to hidden refs for review and skip clean rebases. `dry-run` — no push |
+| `confidence-threshold` | `100` | Minimum AI confidence (0–100) to auto-apply. `100` = only when fully confident |
+| `ai-provider` | `none` | AI provider: `none` \| `gitkraken` |
+| `ai-model` | — | AI model identifier (provider-specific) |
+| `ai-api-key` | — | API key or token for the AI provider |
+| `ai-api-base` | — | Custom API base URL |
+| `exclude-files` | see below | Newline-separated glob patterns for files to exclude from AI resolution |
+| `diff-viewer-base-url` | `https://gitkraken.dev` | Base URL for the diff viewer |
+| `telemetry` | `true` | Enable telemetry and error tracking |
+| `log-level` | `info` | `error` \| `warn` \| `info` \| `debug` |
+
+## SSH Commit Signing
+
+Set `signing-mode: ssh` when you need Merge Mate to preserve trust signals on rewritten commits.
+
+For the full setup flow, see [SSH_SIGNING.md](./SSH_SIGNING.md).
+
+- Existing signed commits in a PR are preserved by re-signing rewritten commits.
+- Branches that require signed commits are handled automatically when the bot can sign.
+- If signing is required but the runner cannot sign safely, Merge Mate stores the rebased result in hidden refs and posts manual re-sign instructions instead of exposing the normal apply checkbox.
+
+### Bot Setup
+
+1. Create or reuse the GitHub account that will appear as the committer.
+2. Generate a passphrase-less SSH key for signing:
+
+```bash
+ssh-keygen -t ed25519 -C "merge-mate[bot]@users.noreply.github.com" -f merge-mate-signing
+```
+
+3. Add the public key from `merge-mate-signing.pub` to the bot GitHub account as a **signing key**.
+4. Verify that the committer email is a verified email on that same GitHub account.
+5. Store the private key as a repository or organization secret.
+
+### Required Environment Variables
+
+Provide signing secrets and committer identity through workflow `env`:
+
+```yaml
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      MERGE_MATE_SSH_SIGNING_KEY: ${{ secrets.MERGE_MATE_SSH_SIGNING_KEY }}
+      MERGE_MATE_GIT_COMMITTER_NAME: merge-mate[bot]
+      MERGE_MATE_GIT_COMMITTER_EMAIL: merge-mate[bot]@users.noreply.github.com
+    steps:
+      - uses: gitkraken/merge-mate-action/sync@v0.2
+        with:
+          signing-mode: ssh
+```
+
+`MERGE_MATE_SSH_SIGNING_KEY` must contain the private key. Merge Mate derives the public key on the runner and uses it only for commit signing. For now, only passphrase-less SSH keys are supported.
+
+### Troubleshooting Unverified Commits
+
+If Merge Mate warns that GitHub did not verify rewritten commits:
+
+- `unknown_key`: upload the SSH public key to the bot account as a signing key.
+- `not_signing_key`: remove and re-add the key as a signing key instead of an authentication key.
+- `unverified_email`: make `MERGE_MATE_GIT_COMMITTER_EMAIL` match a verified email on the bot account.
+- `no_user`: make sure the committer email belongs to a GitHub account.
+- `malformed_signature`: re-save the private key secret exactly as exported, including the final newline.
 
 ## Review Inputs
 
-| Input          | Default               | Description                                             |
-| -------------- | --------------------- | ------------------------------------------------------- |
-| `github-token` | `${{ github.token }}` | GitHub token for authentication                         |
-| `pr-number`    | —                     | PR number to process (required for `workflow_dispatch`) |
-| `action`       | —                     | `apply` or `undo` (required for `workflow_dispatch`)    |
-| `telemetry`    | `true`                | Enable telemetry and error tracking                     |
-| `log-level`    | `info`                | `error` \| `warn` \| `info` \| `debug`                  |
+| Input | Default | Description |
+|-------|---------|-------------|
+| `github-token` | — | GitHub token for authentication. If omitted, Merge Mate falls back to GitKraken App authentication via OIDC. |
+| `fork-push-token` | — | Explicit token used only to probe/push fork branches when the primary token cannot access the fork |
+| `pr-number` | — | PR number to process (required for `workflow_dispatch`) |
+| `action` | — | `apply` or `undo` (required for `workflow_dispatch`) |
+| `telemetry` | `true` | Enable telemetry and error tracking |
+| `log-level` | `info` | `error` \| `warn` \| `info` \| `debug` |
+
+## Fork Pushes
+
+Fork PRs are resolved with a separate pre-push credential flow. This is the part that usually breaks on private forks.
+
+### Why private forks are different
+
+When Merge Mate rewrites a PR branch, it must push back to the repository that owns that branch.
+
+- For same-repo PRs, that is the base repository.
+- For fork PRs, that is the fork repository, not the base repository.
+- A GitHub App installation token only works on repositories included in that installation.
+
+That means installing the app only on the base repository does not automatically let it push to a private fork owned by another user or organization.
+
+### Credential order
+
+For fork pushes, Merge Mate resolves credentials in this order:
+
+1. If the primary source is a regular `github-token` or PAT, probe that token against the fork repository first.
+2. If the primary source is the GitKraken App, request a fork-specific installation token for the fork owner first.
+3. If the selected primary path cannot verify fork access, try `fork-push-token`.
+4. If none of those paths can verify fork access, do not push the fork branch automatically.
+
+The same credential resolver is used in both `sync` and `review`, so any credential you choose for fork pushes should be available to both workflows.
+
+### Sync vs review
+
+The credential resolver is shared, but the fallback behavior is intentionally different:
+
+- `sync` falls back to hidden refs when it cannot find a valid fork push path, so the PR can still be processed and reviewed.
+- `review` does not silently downgrade the apply/undo request; it fails with a precise message when there is no valid way to push the fork branch.
+- If a fork push was already rejected after access was verified, the PR comment suppresses the interactive apply checkbox and leaves manual commands instead of offering the same retry again.
+
+### Recommended solutions
+
+- If your primary `github-token` or PAT already has direct access to the fork repository, Merge Mate can use that token directly and you may not need extra fork-specific credentials.
+- Preferred path: install the GitKraken App on the account or organization that owns the fork and grant it access to that fork repository.
+- Explicit fallback: provide `fork-push-token` with access to the fork branch. This is the most predictable option when you cannot install the app on the fork owner.
+- Opportunistic option: `${{ github.token }}` can be passed as `fork-push-token`, but GitHub documents `GITHUB_TOKEN` as scoped to the workflow repository, so this is best-effort rather than a guaranteed solution for private forks.
+
+If the fork is user-owned, enabling "Allow edits from maintainers" can help in some setups, but it does not grant a GitHub App installation token access to a private fork by itself.
+
+If you use `${{ github.token }}` as `fork-push-token`, the workflow still needs `permissions: contents: write`.
+
+### Failure modes and what they mean
+
+- App not installed on the fork owner: Merge Mate cannot mint a fork installation token, so it falls back to `fork-push-token` if provided.
+- `fork-push-token` missing or invalid: Merge Mate keeps the rebased result in hidden refs and posts manual commands instead of pushing the branch.
+- Probe inconclusive, for example rate limits or transient network failures: Merge Mate treats that as uncertain access and avoids claiming the fork is definitely unreachable.
+- Push rejected after access was verified: this usually means branch protection, repository rules, or token capabilities still block the final push. In that case the PR comment disables the interactive apply retry and shows manual commands instead.
+
+### Operational guidance
+
+- If you choose `fork-push-token`, use the same secret in both the sync and review workflows.
+- If you use a PAT, it needs access to the fork repository and permission to update the source branch.
+- If you use `${{ github.token }}` as `fork-push-token`, treat it as a convenience fallback, not as the primary solution for private forks.
+- If your reviewers depend on the checkbox-based apply flow, prefer installing the app on the fork owner or providing a reliable `fork-push-token`; otherwise the branch may stay in hidden refs and require manual apply.
 
 ## Excluding Files from AI Resolution
 
@@ -170,13 +297,13 @@ Custom patterns are **appended** to the defaults:
 | ---------------------- | ------------------------------------------------ |
 | `contents: write`      | Push rebased branches and hidden refs            |
 | `pull-requests: write` | Post and update PR comments                      |
-| `id-token: write`      | Authenticate with GitKraken AI provider via OIDC |
+| `id-token: write`      | Request OIDC tokens for GitKraken services (GitHub App auth fallback and GitKraken AI) |
 
-`id-token: write` is only needed when using `ai-provider: gitkraken`. If you run without AI (or with a different provider), you can omit it.
+`id-token: write` is required whenever you omit `github-token`, and also when using `ai-provider: gitkraken`. If you provide `github-token` explicitly and do not use GitKraken AI, you can omit it.
 
 ## More Examples
 
-See [EXAMPLES.md](./EXAMPLES.md) for ready-to-use workflow presets: apply policies, dry run, manual trigger, PR filtering, and more.
+See [EXAMPLES.md](./EXAMPLES.md) for ready-to-use workflow presets: apply policies, dry run, manual trigger, PR filtering, SSH signing, fork push workflows, and more.
 
 ## Known Limitations
 

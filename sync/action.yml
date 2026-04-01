@@ -10,10 +10,17 @@ inputs:
   github-token:
     description: GitHub token for authentication
     required: false
+  fork-push-token:
+    description: Explicit token used only to probe/push fork branches when the primary token cannot access the fork
+    required: false
   mode:
     description: "rebase or merge"
     required: false
     default: "rebase"
+  signing-mode:
+    description: "off | ssh"
+    required: false
+    default: "off"
   pr-filter:
     description: "YAML filter for selecting PRs: ids, target-branches, created, updated, authors (supports @org/team-slug tokens)"
     required: false

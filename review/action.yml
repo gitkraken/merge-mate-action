@@ -10,6 +10,9 @@ inputs:
   github-token:
     description: GitHub token for authentication
     required: false
+  fork-push-token:
+    description: Explicit token used only to probe/push fork branches when the primary token cannot access the fork
+    required: false
   pr-number:
     description: PR number to process (required for workflow_dispatch)
     required: false
