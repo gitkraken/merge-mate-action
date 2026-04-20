@@ -23,6 +23,15 @@ inputs:
     description: Enable telemetry and error tracking
     required: false
     default: "true"
+  diff-viewer-base-url:
+    description: Base URL for the diff viewer
+    required: false
+    default: "https://gitkraken.dev"
+  trigger-mode:
+    description: "Trigger source: viewer | workflow_dispatch"
+
+    required: false
+    default: "workflow_dispatch"
   log-level:
     description: "error | warn | info | debug"
     required: false

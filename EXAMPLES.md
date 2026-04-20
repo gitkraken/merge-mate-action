@@ -164,7 +164,7 @@ jobs:
           signing-mode: ssh
 ```
 
-If signing is required but the bot key is unavailable or GitHub still rejects the push, Merge Mate falls back to hidden refs and posts manual re-sign instructions instead of the normal apply checkbox.
+If signing is required but the bot key is unavailable or GitHub still rejects the push, Merge Mate falls back to hidden refs and posts manual re-sign instructions instead of the normal apply button.
 
 ## Private forks with the GitKraken App installed on the fork owner
 
@@ -227,7 +227,7 @@ Review workflow:
 name: Merge Mate Review
 on:
   issue_comment:
-    types: [edited]
+    types: [created]
   workflow_dispatch:
     inputs:
       pr-number:
@@ -241,10 +241,19 @@ on:
         options:
           - apply
           - undo
+      trigger-mode:
+        description: "Trigger source"
+        required: false
+        default: "workflow_dispatch"
+        type: string
 permissions:
   contents: write
   pull-requests: write
+  issues: write
   id-token: write
+concurrency:
+  group: merge-mate-review-${{ github.event.issue.number || inputs.pr-number }}
+  cancel-in-progress: false
 jobs:
   review:
     if: >-
@@ -254,8 +263,9 @@ jobs:
     steps:
       - uses: gitkraken/merge-mate-action/review@v0.2
         with:
-          pr-number: ${{ inputs.pr-number }}
+          pr-number: ${{ github.event.issue.number || inputs.pr-number }}
           action: ${{ inputs.action }}
+          trigger-mode: ${{ inputs.trigger-mode }}
           fork-push-token: ${{ secrets.MERGE_MATE_FORK_PUSH_TOKEN }}
 ```
 

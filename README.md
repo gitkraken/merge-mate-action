@@ -46,13 +46,13 @@ jobs:
           ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
 ```
 
-**`.github/workflows/merge-mate-review.yml`** — handles apply/undo via PR checkbox or manual trigger:
+**`.github/workflows/merge-mate-review.yml`** — handles apply/undo via PR comment buttons or manual trigger:
 
 ```yaml
 name: Merge Mate Review
 on:
   issue_comment:
-    types: [edited]
+    types: [created]
   workflow_dispatch:
     inputs:
       pr-number:
@@ -66,9 +66,15 @@ on:
         options:
           - apply
           - undo
+      trigger-mode:
+        description: "Trigger source"
+        required: false
+        default: "workflow_dispatch"
+        type: string
 permissions:
   contents: write
   pull-requests: write
+  issues: write
   id-token: write
 concurrency:
   group: merge-mate-review-${{ github.event.issue.number || inputs.pr-number }}
@@ -82,11 +88,12 @@ jobs:
     steps:
       - uses: gitkraken/merge-mate-action/review@v0.2
         with:
-          pr-number: ${{ inputs.pr-number }}
+          pr-number: ${{ github.event.issue.number || inputs.pr-number }}
           action: ${{ inputs.action }}
+          trigger-mode: ${{ inputs.trigger-mode }}
 ```
 
-When the target branch is updated, sync runs automatically. PR comments appear with diff preview and checkboxes. You can also manually trigger apply/undo from the Actions tab using workflow_dispatch or via the Conflict viewer link in the PR message.
+When the target branch is updated, sync runs automatically. PR comments appear with a conflict report and image buttons linking to the [Conflict Viewer](https://gitkraken.dev). You can also trigger apply/undo by commenting `gitkraken apply` or `gitkraken undo` on the PR, or from the Actions tab using workflow_dispatch.
 
 These Quick Start workflows omit `github-token` on purpose and rely on GitKraken App authentication via OIDC, so they require `permissions: id-token: write`. If you prefer to use `${{ github.token }}` or a PAT instead, pass it explicitly as `github-token`.
 
@@ -120,7 +127,7 @@ To allow automatic application of high-confidence resolutions, lower the value (
 
 When Merge Mate saves a resolution to a hidden ref, it posts a pull request comment with:
 - A diff preview
-- An **Apply** checkbox
+- An **Apply** button
 
 Select **Apply** to trigger the review workflow and push the resolution to the pull request branch.
 
@@ -161,7 +168,7 @@ For the full setup flow, see [SSH_SIGNING.md](./SSH_SIGNING.md).
 
 - Existing signed commits in a PR are preserved by re-signing rewritten commits.
 - Branches that require signed commits are handled automatically when the bot can sign.
-- If signing is required but the runner cannot sign safely, Merge Mate stores the rebased result in hidden refs and posts manual re-sign instructions instead of exposing the normal apply checkbox.
+- If signing is required but the runner cannot sign safely, Merge Mate stores the rebased result in hidden refs and posts manual re-sign instructions instead of exposing the normal apply button.
 
 ### Bot Setup
 
@@ -248,7 +255,7 @@ The credential resolver is shared, but the fallback behavior is intentionally di
 
 - `sync` falls back to hidden refs when it cannot find a valid fork push path, so the PR can still be processed and reviewed.
 - `review` does not silently downgrade the apply/undo request; it fails with a precise message when there is no valid way to push the fork branch.
-- If a fork push was already rejected after access was verified, the PR comment suppresses the interactive apply checkbox and leaves manual commands instead of offering the same retry again.
+- If a fork push was already rejected after access was verified, the PR comment suppresses the interactive apply button and leaves manual commands instead of offering the same retry again.
 
 ### Recommended solutions
 
@@ -273,7 +280,7 @@ If you use `${{ github.token }}` as `fork-push-token`, the workflow still needs 
 - If you choose `fork-push-token`, use the same secret in both the sync and review workflows.
 - If you use a PAT, it needs access to the fork repository and permission to update the source branch.
 - If you use `${{ github.token }}` as `fork-push-token`, treat it as a convenience fallback, not as the primary solution for private forks.
-- If your reviewers depend on the checkbox-based apply flow, prefer installing the app on the fork owner or providing a reliable `fork-push-token`; otherwise the branch may stay in hidden refs and require manual apply.
+- If your reviewers depend on the button-based apply flow, prefer installing the app on the fork owner or providing a reliable `fork-push-token`; otherwise the branch may stay in hidden refs and require manual apply.
 
 ## Excluding Files from AI Resolution
 
@@ -297,6 +304,7 @@ Custom patterns are **appended** to the defaults:
 | ---------------------- | ------------------------------------------------ |
 | `contents: write`      | Push rebased branches and hidden refs            |
 | `pull-requests: write` | Post and update PR comments                      |
+| `issues: write`        | Add reactions to PR comments (mention feedback)  |
 | `id-token: write`      | Request OIDC tokens for GitKraken services (GitHub App auth fallback and GitKraken AI) |
 
 `id-token: write` is required whenever you omit `github-token`, and also when using `ai-provider: gitkraken`. If you provide `github-token` explicitly and do not use GitKraken AI, you can omit it.
@@ -320,7 +328,9 @@ See [EXAMPLES.md](./EXAMPLES.md) for ready-to-use workflow presets: apply polici
 
 **Permission errors on push** — Ensure `contents: write` is set in the workflow `permissions` block. Repository-level settings (Settings → Actions → General → Workflow permissions) must also allow write access.
 
-**Apply/Undo checkbox does nothing** — The review workflow must be set up separately (see Quick Start). Check that `.github/workflows/merge-mate-review.yml` exists and the `issue_comment` trigger is enabled.
+**Apply/Undo button does nothing** — The review workflow must be set up separately (see Quick Start). Check that `.github/workflows/merge-mate-review.yml` exists with both `issue_comment` and `workflow_dispatch` triggers and the required inputs (`pr-number`, `action`, `trigger-mode`).
+
+**Mention command does nothing** — Verify the review workflow has `issue_comment: types: [created]` in its triggers. The comment must be on a PR (not an issue) and the author must have write access to the repository.
 
 ## Cleanup
 
