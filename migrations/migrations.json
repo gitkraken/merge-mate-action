@@ -1,0 +1,89 @@
+{
+  "formatVersion": 1,
+  "migrations": [
+    {
+      "version": "v0.2.0",
+      "changes": [
+        "Add concurrency control to sync workflow",
+        "Filter bot-triggered events in review workflow",
+        "Remove deprecated ai-provider parameter"
+      ],
+      "sync": {
+        "concurrency": {
+          "group": "merge-mate-sync-${{ github.ref }}",
+          "cancel-in-progress": true
+        },
+        "stepParams": {
+          "ai-provider": null
+        }
+      },
+      "review": {
+        "jobIf": "github.event_name == 'workflow_dispatch' || (github.event.issue.pull_request && github.event.sender.type != 'Bot')"
+      }
+    },
+    {
+      "version": "v0.3.0",
+      "changes": [
+        "Switch review trigger from edited to created comments",
+        "Add trigger-mode parameter for diff viewer integration",
+        "Add issues:write permission for review workflow",
+        "Update secret reference to MERGE_MATE_API_KEY"
+      ],
+      "sync": {
+        "stepParams": {
+          "ai-api-key": "${{ secrets.MERGE_MATE_API_KEY }}"
+        }
+      },
+      "review": {
+        "triggers": {
+          "issue_comment": {
+            "types": ["created"]
+          }
+        },
+        "permissions": {
+          "issues": "write"
+        },
+        "inputs": {
+          "trigger-mode": {
+            "description": "Trigger source",
+            "required": false,
+            "default": "workflow_dispatch",
+            "type": "string"
+          }
+        },
+        "stepParams": {
+          "pr-number": "${{ github.event.issue.number || inputs.pr-number }}",
+          "trigger-mode": "${{ inputs.trigger-mode }}"
+        }
+      }
+    },
+    {
+      "version": "v0.4.0",
+      "changes": [
+        "Add typed repository_dispatch events for review workflow",
+        "Remove unused trigger-mode input and parameter",
+        "Update pr-number to include dispatch client_payload source",
+        "Add concurrency control to review workflow"
+      ],
+      "review": {
+        "triggers": {
+          "repository_dispatch": {
+            "types": ["merge-mate-apply", "merge-mate-undo"]
+          }
+        },
+        "concurrency": {
+          "group": "merge-mate-review-${{ github.event.issue.number || github.event.client_payload.pr-number || inputs.pr-number }}",
+          "cancel-in-progress": false
+        },
+        "inputs": {
+          "trigger-mode": null
+        },
+        "stepParams": {
+          "trigger-mode": null,
+          "pr-number": "${{ github.event.issue.number || github.event.client_payload.pr-number || inputs.pr-number }}"
+        },
+        "jobIf": "github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch' || (github.event.issue.pull_request && github.event.sender.type != 'Bot')"
+      }
+    }
+  ]
+}

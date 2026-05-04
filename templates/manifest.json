@@ -1,0 +1,288 @@
+{
+  "formatVersion": 1,
+  "templates": [
+    {
+      "id": "sync-push",
+      "name": "Sync on Push",
+      "description": "Syncs PRs when the target branch is updated",
+      "file": "sync-push.yml",
+      "category": "sync",
+      "default": true,
+      "triggers": ["push"],
+      "placeholders": {
+        "VERSION": {
+          "description": "Action version tag",
+          "default": "v0.4",
+          "hidden": true
+        },
+        "DEFAULT_BRANCH": {
+          "description": "Target branch name",
+          "default": "main",
+          "hidden": true
+        }
+      },
+      "options": {
+        "apply-policy": {
+          "description": "How resolved conflicts are handled",
+          "type": "choice",
+          "values": ["auto", "resolved-only", "review", "dry-run"],
+          "default": "auto"
+        },
+        "mode": {
+          "description": "Sync strategy (rebase or merge)",
+          "type": "choice",
+          "values": ["rebase", "merge"],
+          "default": "rebase"
+        },
+        "confidence-threshold": {
+          "description": "Minimum AI confidence to auto-apply (%)",
+          "type": "number",
+          "default": 100,
+          "min": 0,
+          "max": 100
+        },
+        "log-level": {
+          "description": "Log verbosity level",
+          "type": "choice",
+          "values": ["error", "warn", "info", "debug"],
+          "default": "info"
+        },
+        "pr-filter": {
+          "description": "YAML filter for selecting PRs (target-branches, labels, authors, created, include-drafts)",
+          "type": "text"
+        },
+        "concurrency": {
+          "description": "Maximum number of PRs to process in parallel",
+          "type": "number",
+          "default": 3,
+          "min": 1
+        },
+        "exclude-files": {
+          "description": "Newline-separated glob patterns for files to exclude from AI resolution",
+          "type": "text"
+        }
+      }
+    },
+    {
+      "id": "sync-cron",
+      "name": "Sync on Schedule",
+      "description": "Syncs PRs on a cron schedule and on push to the target branch",
+      "file": "sync-cron.yml",
+      "category": "sync",
+      "triggers": ["schedule", "push"],
+      "placeholders": {
+        "VERSION": {
+          "description": "Action version tag",
+          "default": "v0.4",
+          "hidden": true
+        },
+        "DEFAULT_BRANCH": {
+          "description": "Target branch name",
+          "default": "main",
+          "hidden": true
+        },
+        "CRON_SCHEDULE": {
+          "description": "Cron expression for scheduled sync runs",
+          "default": "0 */6 * * *"
+        }
+      },
+      "options": {
+        "apply-policy": {
+          "description": "How resolved conflicts are handled",
+          "type": "choice",
+          "values": ["auto", "resolved-only", "review", "dry-run"],
+          "default": "auto"
+        },
+        "mode": {
+          "description": "Sync strategy (rebase or merge)",
+          "type": "choice",
+          "values": ["rebase", "merge"],
+          "default": "rebase"
+        },
+        "confidence-threshold": {
+          "description": "Minimum AI confidence to auto-apply (%)",
+          "type": "number",
+          "default": 100,
+          "min": 0,
+          "max": 100
+        },
+        "log-level": {
+          "description": "Log verbosity level",
+          "type": "choice",
+          "values": ["error", "warn", "info", "debug"],
+          "default": "info"
+        },
+        "pr-filter": {
+          "description": "YAML filter for selecting PRs (target-branches, labels, authors, created, include-drafts)",
+          "type": "text"
+        },
+        "concurrency": {
+          "description": "Maximum number of PRs to process in parallel",
+          "type": "number",
+          "default": 3,
+          "min": 1
+        },
+        "exclude-files": {
+          "description": "Newline-separated glob patterns for files to exclude from AI resolution",
+          "type": "text"
+        }
+      }
+    },
+    {
+      "id": "sync-manual",
+      "name": "Sync Manual",
+      "description": "On-demand sync from the Actions tab with mode and policy selection",
+      "file": "sync-manual.yml",
+      "category": "sync",
+      "triggers": ["workflow_dispatch"],
+      "placeholders": {
+        "VERSION": {
+          "description": "Action version tag",
+          "default": "v0.4",
+          "hidden": true
+        }
+      },
+      "options": {
+        "confidence-threshold": {
+          "description": "Minimum AI confidence to auto-apply (%)",
+          "type": "number",
+          "default": 100,
+          "min": 0,
+          "max": 100
+        },
+        "log-level": {
+          "description": "Log verbosity level",
+          "type": "choice",
+          "values": ["error", "warn", "info", "debug"],
+          "default": "info"
+        },
+        "pr-filter": {
+          "description": "YAML filter for selecting PRs (target-branches, labels, authors, created, include-drafts)",
+          "type": "text"
+        },
+        "concurrency": {
+          "description": "Maximum number of PRs to process in parallel",
+          "type": "number",
+          "default": 3,
+          "min": 1
+        },
+        "exclude-files": {
+          "description": "Newline-separated glob patterns for files to exclude from AI resolution",
+          "type": "text"
+        }
+      }
+    },
+    {
+      "id": "sync-push-cron",
+      "name": "Sync on Push + Schedule + Manual",
+      "description": "Combined: auto-sync on push and schedule, plus manual trigger with policy override",
+      "file": "sync-push-cron.yml",
+      "category": "sync",
+      "triggers": ["push", "schedule", "workflow_dispatch"],
+      "placeholders": {
+        "VERSION": {
+          "description": "Action version tag",
+          "default": "v0.4",
+          "hidden": true
+        },
+        "DEFAULT_BRANCH": {
+          "description": "Target branch name",
+          "default": "main",
+          "hidden": true
+        },
+        "CRON_SCHEDULE": {
+          "description": "Cron expression for scheduled sync runs",
+          "default": "0 */6 * * *"
+        }
+      },
+      "options": {
+        "apply-policy": {
+          "description": "How resolved conflicts are handled",
+          "type": "choice",
+          "values": ["auto", "resolved-only", "review", "dry-run"],
+          "default": "auto"
+        },
+        "mode": {
+          "description": "Sync strategy (rebase or merge)",
+          "type": "choice",
+          "values": ["rebase", "merge"],
+          "default": "rebase"
+        },
+        "confidence-threshold": {
+          "description": "Minimum AI confidence to auto-apply (%)",
+          "type": "number",
+          "default": 100,
+          "min": 0,
+          "max": 100
+        },
+        "log-level": {
+          "description": "Log verbosity level",
+          "type": "choice",
+          "values": ["error", "warn", "info", "debug"],
+          "default": "info"
+        },
+        "pr-filter": {
+          "description": "YAML filter for selecting PRs (target-branches, labels, authors, created, include-drafts)",
+          "type": "text"
+        },
+        "concurrency": {
+          "description": "Maximum number of PRs to process in parallel",
+          "type": "number",
+          "default": 3,
+          "min": 1
+        },
+        "exclude-files": {
+          "description": "Newline-separated glob patterns for files to exclude from AI resolution",
+          "type": "text"
+        }
+      }
+    },
+    {
+      "id": "review",
+      "name": "Review",
+      "description": "Apply or undo AI-resolved changes via PR comment buttons",
+      "file": "review.yml",
+      "category": "review",
+      "default": true,
+      "triggers": ["issue_comment", "repository_dispatch"],
+      "placeholders": {
+        "VERSION": {
+          "description": "Action version tag",
+          "default": "v0.4",
+          "hidden": true
+        }
+      },
+      "options": {
+        "log-level": {
+          "description": "Log verbosity level",
+          "type": "choice",
+          "values": ["error", "warn", "info", "debug"],
+          "default": "info"
+        }
+      }
+    },
+    {
+      "id": "review-manual",
+      "name": "Review + Manual Trigger",
+      "description": "Apply or undo AI-resolved changes via PR comment buttons or manual trigger from Actions tab",
+      "file": "review-manual.yml",
+      "category": "review",
+      "triggers": ["issue_comment", "repository_dispatch", "workflow_dispatch"],
+      "placeholders": {
+        "VERSION": {
+          "description": "Action version tag",
+          "default": "v0.4",
+          "hidden": true
+        }
+      },
+      "options": {
+        "log-level": {
+          "description": "Log verbosity level",
+          "type": "choice",
+          "values": ["error", "warn", "info", "debug"],
+          "default": "info"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+name: Merge Mate Sync (Manual)
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Sync strategy"
+        required: true
+        type: choice
+        options:
+          - rebase
+          - merge
+        default: rebase
+      apply-policy:
+        description: "Apply policy"
+        required: true
+        type: choice
+        options:
+          - auto
+          - resolved-only
+          - review
+          - dry-run
+        default: auto
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: gitkraken/merge-mate-action/sync@{{VERSION}}
+        with:
+          mode: ${{ inputs.mode }}
+          apply-policy: ${{ inputs.apply-policy }}
+          ai-api-key: ${{ secrets.MERGE_MATE_API_KEY }}

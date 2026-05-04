@@ -22,7 +22,8 @@ inputs:
     required: false
     default: "off"
   pr-filter:
-    description: "YAML filter for selecting PRs: ids, target-branches, created, updated, authors (supports @org/team-slug tokens)"
+    description: "YAML filter for selecting PRs: ids, target-branches, labels, created, updated, authors (supports @org/team-slug tokens), include-drafts"
+
     required: false
   concurrency:
     description: Maximum number of PRs to process in parallel

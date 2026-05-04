@@ -1,0 +1,33 @@
+name: Merge Mate Sync
+on:
+  push:
+    branches: ["{{DEFAULT_BRANCH}}"]
+  schedule:
+    - cron: "{{CRON_SCHEDULE}}"
+  workflow_dispatch:
+    inputs:
+      apply-policy:
+        description: "Apply policy"
+        required: true
+        type: choice
+        options:
+          - auto
+          - resolved-only
+          - review
+          - dry-run
+        default: auto
+concurrency:
+  group: merge-mate-sync-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: gitkraken/merge-mate-action/sync@{{VERSION}}
+        with:
+          apply-policy: ${{ inputs.apply-policy || '{{VALUE}}' }}
+          ai-api-key: ${{ secrets.MERGE_MATE_API_KEY }}

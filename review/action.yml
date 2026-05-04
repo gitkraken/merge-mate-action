@@ -14,10 +14,10 @@ inputs:
     description: Explicit token used only to probe/push fork branches when the primary token cannot access the fork
     required: false
   pr-number:
-    description: PR number to process (required for workflow_dispatch)
+    description: PR number to process (manual fallback; ignored on repository_dispatch and issue_comment events)
     required: false
   action:
-    description: "'apply' or 'undo' (required for workflow_dispatch)"
+    description: "'apply' or 'undo' (manual fallback; ignored on repository_dispatch and issue_comment events)"
     required: false
   telemetry:
     description: Enable telemetry and error tracking
@@ -27,11 +27,6 @@ inputs:
     description: Base URL for the diff viewer
     required: false
     default: "https://gitkraken.dev"
-  trigger-mode:
-    description: "Trigger source: viewer | workflow_dispatch"
-
-    required: false
-    default: "workflow_dispatch"
   log-level:
     description: "error | warn | info | debug"
     required: false

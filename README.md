@@ -2,7 +2,25 @@
 
 A GitHub Action that syncs pull requests with their target branches and uses AI to resolve conflicts.
 
-## Prerequisites
+## Quick Start
+
+Run the **[Setup Wizard](https://gitkraken.dev/merge-mate/setup)**. It walks you through installing the GitHub App, configures your secrets, and opens a PR with the workflow files for each repo you select. Merge that PR and you're ready to go.
+
+When a target branch update causes conflicts, Merge Mate resolves them and posts a PR comment:
+
+<p align="center">
+  <img src="assets/pr-comment-example.png" alt="Merge Mate PR comment showing a conflict resolved with 90% confidence and a button to review and apply in GitKraken" width="600">
+</p>
+
+If Merge Mate needs to push to branches in forks (especially private forks), set up fork credentials before you start. You have two options:
+
+- Install the GitKraken App on the fork owner's account and grant it access to the fork.
+- Pass `fork-push-token` in both the sync and review workflows.
+
+<details>
+<summary>Manual setup</summary>
+
+### Prerequisites
 
 1. **Install the GitHub App** — [Install Merge Mate](https://github.com/apps/gitkraken-services) on your repository. Select "Only select repositories" for least-privilege access. The app appears as **GitKraken Services** on all GitHub UI surfaces.
 
@@ -12,14 +30,9 @@ A GitHub Action that syncs pull requests with their target branches and uses AI 
 
 3. **Add the key to GitHub Secrets** — In your repository, go to **Settings → Secrets and variables → Actions → New repository secret**. Name it `MERGE_MATE_API_KEY` and paste the key.
 
-4. **Add workflow files** — Create the YAML files below manually (the app does not generate them automatically).
+4. **Add workflow files** — Copy from [`templates/`](./templates/) or create the YAML files below manually.
 
-If you need Merge Mate to push to branches that live in forks, especially private forks, plan the fork credential path up front:
-
-- Install the GitKraken App on the fork owner too, and grant it access to the fork repository.
-- Or provide `fork-push-token` in both the sync and review workflows.
-
-## Quick Start
+### Workflow Files
 
 Create two workflow files in your repository:
 
@@ -41,7 +54,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: gitkraken/merge-mate-action/sync@v0.2
+      - uses: gitkraken/merge-mate-action/sync@v0.4
         with:
           ai-api-key: ${{ secrets.GK_AI_PROVISIONER_TOKEN }}
 ```
@@ -51,6 +64,8 @@ jobs:
 ```yaml
 name: Merge Mate Review
 on:
+  repository_dispatch:
+    types: [merge-mate-apply, merge-mate-undo]
   issue_comment:
     types: [created]
   workflow_dispatch:
@@ -66,38 +81,35 @@ on:
         options:
           - apply
           - undo
-      trigger-mode:
-        description: "Trigger source"
-        required: false
-        default: "workflow_dispatch"
-        type: string
 permissions:
   contents: write
   pull-requests: write
   issues: write
   id-token: write
 concurrency:
-  group: merge-mate-review-${{ github.event.issue.number || inputs.pr-number }}
+  group: merge-mate-review-${{ github.event.client_payload.pr-number || github.event.issue.number || inputs.pr-number }}
   cancel-in-progress: false
 jobs:
   review:
     if: >-
+      github.event_name == 'repository_dispatch' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event.issue.pull_request && github.event.sender.type != 'Bot')
     runs-on: ubuntu-latest
     steps:
-      - uses: gitkraken/merge-mate-action/review@v0.2
+      - uses: gitkraken/merge-mate-action/review@v0.4
         with:
-          pr-number: ${{ github.event.issue.number || inputs.pr-number }}
+          pr-number: ${{ inputs.pr-number }}
           action: ${{ inputs.action }}
-          trigger-mode: ${{ inputs.trigger-mode }}
 ```
 
-When the target branch is updated, sync runs automatically. PR comments appear with a conflict report and image buttons linking to the [Conflict Viewer](https://gitkraken.dev). You can also trigger apply/undo by commenting `gitkraken apply` or `gitkraken undo` on the PR, or from the Actions tab using workflow_dispatch.
+The `repository_dispatch` trigger handles apply/undo button clicks from the diff viewer. `issue_comment` handles `gitkraken apply` / `gitkraken undo` mentions on PRs. `workflow_dispatch` is optional for manual runs from the Actions tab.
 
-These Quick Start workflows omit `github-token` on purpose and rely on GitKraken App authentication via OIDC, so they require `permissions: id-token: write`. If you prefer to use `${{ github.token }}` or a PAT instead, pass it explicitly as `github-token`.
+These workflows omit `github-token` on purpose and rely on GitKraken App authentication via OIDC, so they require `permissions: id-token: write`. If you prefer to use `${{ github.token }}` or a PAT instead, pass it explicitly as `github-token`.
 
 If your repository receives PRs from private forks, read [Fork Pushes](./README.md#fork-pushes) before relying on the default setup. Installing the app only on the base repository is not always enough to push back to fork branches.
+
+</details>
 
 
 ## Features
@@ -147,7 +159,7 @@ git fetch && git reset --hard origin/<branch>
 | `fork-push-token` | — | Explicit token used only to probe/push fork branches when the primary token cannot access the fork |
 | `mode` | `rebase` | `rebase` or `merge` |
 | `signing-mode` | `off` | `off` or `ssh`. Enables SSH signing capability, but Merge Mate only signs when policy requires it |
-| `pr-filter` | — | YAML filter for selecting PRs: `ids`, `target-branches`, `created`, `updated`, `authors` (supports `@org/team-slug` tokens) |
+| `pr-filter` | — | YAML filter for selecting PRs by `ids`, `target-branches`, `labels`, `created`, `updated`, `authors`, or `include-drafts`. The `authors` key supports `@org/team-slug` tokens. |
 | `concurrency` | `3` | Maximum number of PRs to process in parallel |
 | `apply-policy` | `auto` | `auto` — apply above threshold. `resolved-only` — same but skip clean rebases. `review` — save non-clean results to hidden refs for review and skip clean rebases. `dry-run` — no push |
 | `confidence-threshold` | `100` | Minimum AI confidence (0–100) to auto-apply. `100` = only when fully confident |
@@ -196,7 +208,7 @@ jobs:
       MERGE_MATE_GIT_COMMITTER_NAME: merge-mate[bot]
       MERGE_MATE_GIT_COMMITTER_EMAIL: merge-mate[bot]@users.noreply.github.com
     steps:
-      - uses: gitkraken/merge-mate-action/sync@v0.2
+      - uses: gitkraken/merge-mate-action/sync@v0.4
         with:
           signing-mode: ssh
 ```
@@ -219,8 +231,8 @@ If Merge Mate warns that GitHub did not verify rewritten commits:
 |-------|---------|-------------|
 | `github-token` | — | GitHub token for authentication. If omitted, Merge Mate falls back to GitKraken App authentication via OIDC. |
 | `fork-push-token` | — | Explicit token used only to probe/push fork branches when the primary token cannot access the fork |
-| `pr-number` | — | PR number to process (required for `workflow_dispatch`) |
-| `action` | — | `apply` or `undo` (required for `workflow_dispatch`) |
+| `pr-number` | — | PR number to process (manual fallback for `workflow_dispatch`; ignored on `repository_dispatch` and `issue_comment` events) |
+| `action` | — | `apply` or `undo` (manual fallback for `workflow_dispatch`; ignored on `repository_dispatch` and `issue_comment` events) |
 | `telemetry` | `true` | Enable telemetry and error tracking |
 | `log-level` | `info` | `error` \| `warn` \| `info` \| `debug` |
 
@@ -291,7 +303,7 @@ For conflicted lock files, Merge Mate uses the target branch version.
 Custom patterns are **appended** to the defaults:
 
 ```yaml
-- uses: gitkraken/merge-mate-action/sync@v0.2
+- uses: gitkraken/merge-mate-action/sync@v0.4
   with:
     exclude-files: |
       **/vendor/**
@@ -311,7 +323,9 @@ Custom patterns are **appended** to the defaults:
 
 ## More Examples
 
-See [EXAMPLES.md](./EXAMPLES.md) for ready-to-use workflow presets: apply policies, dry run, manual trigger, PR filtering, SSH signing, fork push workflows, and more.
+Copy-ready workflow templates are in [`templates/`](./templates/) — pick a trigger pattern, replace placeholders, commit to `.github/workflows/`. See [`templates/manifest.json`](./templates/manifest.json) for the full list with configurable options.
+
+See [EXAMPLES.md](./EXAMPLES.md) for configuration recipes: apply policies, SSH signing, fork push workflows, PR filtering, and more.
 
 ## Known Limitations
 
@@ -324,11 +338,11 @@ See [EXAMPLES.md](./EXAMPLES.md) for ready-to-use workflow presets: apply polici
 
 **"APIKey is required"** — The secret is missing or misconfigured. Verify that `MERGE_MATE_API_KEY` exists in Settings → Secrets and variables → Actions, the name matches exactly (case-sensitive), and the token is valid.
 
-**"No PRs processed"** — Check that the `branches` trigger in your workflow matches the branch that was actually pushed. If you use `pr-filter`, verify the filter does not exclude all open PRs.
+**"No PRs processed"** — Check that the `branches` trigger in your workflow matches the branch that was actually pushed. If you use `pr-filter`, verify the filter does not exclude all open PRs. Draft PRs are excluded by default; set `include-drafts: true` in `pr-filter` to include them (needed for stacked-PR workflows where a draft sits mid-chain).
 
 **Permission errors on push** — Ensure `contents: write` is set in the workflow `permissions` block. Repository-level settings (Settings → Actions → General → Workflow permissions) must also allow write access.
 
-**Apply/Undo button does nothing** — The review workflow must be set up separately (see Quick Start). Check that `.github/workflows/merge-mate-review.yml` exists with both `issue_comment` and `workflow_dispatch` triggers and the required inputs (`pr-number`, `action`, `trigger-mode`).
+**Apply/Undo button does nothing** — The review workflow must be set up separately (see Quick Start). Check that `.github/workflows/merge-mate-review.yml` exists with `repository_dispatch: types: [merge-mate-apply, merge-mate-undo]` and `issue_comment: types: [created]` triggers.
 
 **Mention command does nothing** — Verify the review workflow has `issue_comment: types: [created]` in its triggers. The comment must be on a PR (not an issue) and the author must have write access to the repository.
 
@@ -366,7 +380,7 @@ This deletes all hidden refs. Applied or undone resolutions are already on the P
 
 **For v0.x.y (pre-release):**
 
-- Pin to `@v0.2` — patches within the same minor version
+- Pin to `@v0.4` — receives patches within the same minor version
 - Breaking changes may occur between minors
 
 **For v1+ (stable):**

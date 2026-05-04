@@ -103,7 +103,7 @@ jobs:
       MERGE_MATE_GIT_COMMITTER_NAME: merge-mate[bot]
       MERGE_MATE_GIT_COMMITTER_EMAIL: merge-mate[bot]@users.noreply.github.com
     steps:
-      - uses: gitkraken/merge-mate-action/sync@v0.2
+      - uses: gitkraken/merge-mate-action/sync@v0.4
         with:
           signing-mode: ssh
 ```
