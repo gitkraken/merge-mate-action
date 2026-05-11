@@ -1,12 +1,24 @@
 {
-  "formatVersion": 1,
+  "formatVersion": 2,
   "migrations": [
     {
       "version": "v0.2.0",
       "changes": [
-        "Add concurrency control to sync workflow",
-        "Filter bot-triggered events in review workflow",
-        "Remove deprecated ai-provider parameter"
+        {
+          "description": "Add concurrency control to sync workflow",
+          "target": "sync",
+          "fields": ["concurrency"]
+        },
+        {
+          "description": "Filter bot-triggered events in review workflow",
+          "target": "review",
+          "fields": ["jobIf"]
+        },
+        {
+          "description": "Remove deprecated ai-provider parameter",
+          "target": "sync",
+          "fields": ["stepParams.ai-provider"]
+        }
       ],
       "sync": {
         "concurrency": {
@@ -24,10 +36,26 @@
     {
       "version": "v0.3.0",
       "changes": [
-        "Switch review trigger from edited to created comments",
-        "Add trigger-mode parameter for diff viewer integration",
-        "Add issues:write permission for review workflow",
-        "Update secret reference to MERGE_MATE_API_KEY"
+        {
+          "description": "Switch review trigger from edited to created comments",
+          "target": "review",
+          "fields": ["triggers.issue_comment"]
+        },
+        {
+          "description": "Add trigger-mode parameter for diff viewer integration",
+          "target": "review",
+          "fields": ["inputs.trigger-mode", "stepParams.trigger-mode"]
+        },
+        {
+          "description": "Add issues:write permission for review workflow",
+          "target": "review",
+          "fields": ["permissions.issues"]
+        },
+        {
+          "description": "Update secret reference to MERGE_MATE_API_KEY",
+          "target": "sync",
+          "fields": ["stepParams.ai-api-key"]
+        }
       ],
       "sync": {
         "stepParams": {
@@ -60,10 +88,26 @@
     {
       "version": "v0.4.0",
       "changes": [
-        "Add typed repository_dispatch events for review workflow",
-        "Remove unused trigger-mode input and parameter",
-        "Update pr-number to include dispatch client_payload source",
-        "Add concurrency control to review workflow"
+        {
+          "description": "Add typed repository_dispatch events for review workflow",
+          "target": "review",
+          "fields": ["triggers.repository_dispatch", "jobIf"]
+        },
+        {
+          "description": "Remove unused trigger-mode input and parameter",
+          "target": "review",
+          "fields": ["inputs.trigger-mode", "stepParams.trigger-mode"]
+        },
+        {
+          "description": "Update pr-number to include dispatch client_payload source",
+          "target": "review",
+          "fields": ["stepParams.pr-number"]
+        },
+        {
+          "description": "Add concurrency control to review workflow",
+          "target": "review",
+          "fields": ["concurrency"]
+        }
       ],
       "review": {
         "triggers": {
