@@ -52,13 +52,13 @@
           "fields": ["permissions.issues"]
         },
         {
-          "description": "Update secret reference to MERGE_MATE_API_KEY",
+          "description": "Set ai-api-key secret reference to MERGE_MATE_API_KEY",
           "target": "sync",
-          "fields": ["stepParams.ai-api-key"]
+          "fields": ["stepDefaults.ai-api-key"]
         }
       ],
       "sync": {
-        "stepParams": {
+        "stepDefaults": {
           "ai-api-key": "${{ secrets.MERGE_MATE_API_KEY }}"
         }
       },
